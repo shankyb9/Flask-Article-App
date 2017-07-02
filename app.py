@@ -131,7 +131,7 @@ def login():
 				session['username'] = username
 
 				flash('You are now logged in!', 'success')
-				return redirect(url_for('dashboard'))
+				return redirect(url_for('dashboard',author=username))
 
 			else:
 				error = 'Invalid password'
@@ -170,27 +170,31 @@ def logout():
 
 
 # Dashboard
-@app.route('/dashboard')
+@app.route('/dashboard/<string:author>')
 @is_logged_in
-def dashboard():
-	# Create cursor
-	cur = mysql.connection.cursor()
+def dashboard(author):
+	if author == session['username']:
+		# Create cursor
+		cur = mysql.connection.cursor()
 
-	# Get articles
-	result = cur.execute("SELECT * FROM articles")
+		# Get articles
+		result = cur.execute("SELECT * FROM articles WHERE author = %s",[author])
 
-	articles = cur.fetchall()
+		articles = cur.fetchall()
 
-	if result > 0:
-		return render_template('dashboard.html', articles=articles)
-	else:
-		msg = 'No articles found!'
-		return render_template('dashboard.html', msg=msg)
-	# Close connection
-	cur.close()
+		if result > 0:
+			return render_template('dashboard.html', articles=articles)
+		else:
+			msg = 'No articles found!'
+			return render_template('dashboard.html', msg=msg)
+		# Close connection
+		cur.close()
 			
 
-	return render_template('dashboard.html')
+		return render_template('dashboard.html')
+	else:
+		flash('Unauthorized !','danger')	
+		return render_template('home.html')
 
 
 # Article form class
@@ -221,7 +225,7 @@ def add_article():
 		cur.close()
 
 		flash('Your article is added successfully!','success')
-		return redirect(url_for('dashboard'))
+		return redirect(url_for('dashboard',author=session['username']))
 
 	return render_template('add_article.html', form = form)
 
@@ -260,7 +264,7 @@ def edit_article(id):
 		cur.close()
 
 		flash('Your article is updated successfully!','success')
-		return redirect(url_for('dashboard'))
+		return redirect(url_for('dashboard',author=session['username']))
 
 	return render_template('edit_article.html', form = form)
 
@@ -283,7 +287,7 @@ def delete_article(id):
 
     flash('Article Deleted', 'success')
 
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('dashboard',author=session['username']))
 
 
 
